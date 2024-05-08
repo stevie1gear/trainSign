@@ -26,8 +26,8 @@ ROUTE = 'Green-B'
 BACKGROUND_IMAGE = 'TGreen-dashboard.bmp'
 PAGE_LIMIT = '3'
 DATA_SOURCE = 'https://api-v3.mbta.com/predictions?filter%5Bstop%5D='+STOP_ID+'&filter%5Bdirection_id%5D='+DIRECTION_ID+'&filter%5Broute%5D='+ROUTE+'&page%5Blimit%5D='+PAGE_LIMIT+'&sort=departure_time'
-UPDATE_DELAY = 15
-SYNC_TIME_DELAY = 30
+UPDATE_DELAY = 20
+SYNC_TIME_DELAY = 50
 MINIMUM_MINUTES_DISPLAY = 9
 ERROR_RESET_THRESHOLD = 3
 #-*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*-
@@ -102,8 +102,8 @@ colors = [0x444444, 0xDD8000]  # [dim white, gold]
 
 font = bitmap_font.load_font("fonts/6x10.bdf")
 
-# title = adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text=BOARD_TITLE)
-title = adafruit_display_text.scrolling_label.ScrollingLabel(font, max_characters=7, color=colors[0], x=20, y=3, text=BOARD_TITLE)
+title = adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text=BOARD_TITLE)
+# title = adafruit_display_text.scrolling_label.ScrollingLabel(font, max_characters=7, color=colors[0], x=20, y=3, text=BOARD_TITLE)
 
 text_lines = [
     displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter())),
@@ -118,6 +118,7 @@ display.root_group = group
 
 error_counter = 0
 last_time_sync = time.monotonic() - SYNC_TIME_DELAY - 1
+last_fetch = time.monotonic() - UPDATE_DELAY - 1
 
 while True:
     try:
@@ -127,11 +128,13 @@ while True:
             last_time_sync = time.monotonic()
         #print("-*--> ENRIQUE HERE")
         #print(get_arrival_times())
+        if time.monotonic() > last_fetch + UPDATE_DELAY:
             t1, t2, t3 = get_arrival_times()
             print(t1, t2, t3)
+            last_fetch = time.monotonic()
             # update_text(t1, t2, t3)
             # update_text(*arrivals)
-        title.update()
+        # title.update()
     except (ValueError, RuntimeError) as e:
         print("Some error occured, retrying! -", e)
         error_counter = error_counter + 1
