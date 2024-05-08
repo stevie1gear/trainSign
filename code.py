@@ -80,11 +80,33 @@ def text_formating(trainMinutes):
     return textFormated
 
 
+def text_formating2(trainMinutes):
+    textFormated = ""
+    if(trainMinutes<=0 & trainMinutes > -100):
+        textFormated = "Now"
+    elif(trainMinutes<10):
+        textFormated = str(trainMinutes) + "  min"
+    else: 
+        textFormated = str(trainMinutes) + " min"
+
+    if(trainMinutes==-777):
+        textFormated = "-----"
+    elif(trainMinutes==-888):
+        textFormated = "-----"
+    elif(trainMinutes==-999):
+        textFormated = "-----"
+
+    return textFormated
+
 def update_text(t1, t2, t3):
 
-    text_lines[2].text = text_formating(t1)
-    text_lines[3].text = text_formating(t2)
-    text_lines[4].text = text_formating(t3)
+    text_lines[2].text = text_formating2(t1)
+    text_lines[3].text = text_formating2(t2)
+    text_lines[4].text = text_formating2(t3)
+    
+    # text_lines[2].text = str(t1)
+    # text_lines[3].text = "10 min"
+    # text_lines[4].text = "18 min"
     gc.collect()
 
 
@@ -132,7 +154,7 @@ while True:
             t1, t2, t3 = get_arrival_times()
             print(t1, t2, t3)
             last_fetch = time.monotonic()
-            # update_text(t1, t2, t3)
+            update_text(t1, t2, t3)
             # update_text(*arrivals)
         # title.update()
     except (ValueError, RuntimeError) as e:
