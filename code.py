@@ -9,11 +9,13 @@ import microcontroller
 from board import NEOPIXEL
 import displayio
 import adafruit_display_text.label
+import adafruit_display_text.scrolling_label
 from adafruit_datetime import datetime
 from adafruit_bitmap_font import bitmap_font
 from adafruit_matrixportal.matrix import Matrix
 from adafruit_matrixportal.network import Network
 import json
+import gc
 
 #CONFIGURABLE PARAMETERS
 #-*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*-
@@ -61,7 +63,7 @@ def get_arrival_times():
 
 def text_formating(trainMinutes):
     textFormated = ""
-    if(trainMinutes<=0):
+    if(trainMinutes<=0 & trainMinutes > -100):
         textFormated = "Now"
     elif(trainMinutes<10):
         textFormated = "%s  min" % (trainMinutes)
@@ -83,8 +85,8 @@ def update_text(t1, t2, t3):
     text_lines[2].text = text_formating(t1)
     text_lines[3].text = text_formating(t2)
     text_lines[4].text = text_formating(t3)
+    gc.collect()
 
-    display.root_group = group
 
 # --- Display setup ---
 matrix = Matrix()
@@ -96,10 +98,16 @@ group = displayio.Group()
 bitmap = displayio.OnDiskBitmap(open(BACKGROUND_IMAGE, 'rb'))
 colors = [0x444444, 0xDD8000]  # [dim white, gold]
 
+
+
 font = bitmap_font.load_font("fonts/6x10.bdf")
+
+# title = adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text=BOARD_TITLE)
+title = adafruit_display_text.scrolling_label.ScrollingLabel(font, max_characters=7, color=colors[0], x=20, y=3, text=BOARD_TITLE)
+
 text_lines = [
     displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter())),
-    adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text=BOARD_TITLE),
+    title,
     adafruit_display_text.label.Label(font, color=colors[1], x=26, y=11, text="- min"),
     adafruit_display_text.label.Label(font, color=colors[1], x=26, y=20, text="- min"),
     adafruit_display_text.label.Label(font, color=colors[1], x=26, y=28, text="- min"),
@@ -109,21 +117,25 @@ for x in text_lines:
 display.root_group = group
 
 error_counter = 0
-last_time_sync = None
+last_time_sync = time.monotonic() - SYNC_TIME_DELAY - 1
+
 while True:
     try:
-        if last_time_sync is None or time.monotonic() > last_time_sync + SYNC_TIME_DELAY:
+        if time.monotonic() > last_time_sync + SYNC_TIME_DELAY:
             # Sync clock to minimize time drift
             network.get_local_time()
             last_time_sync = time.monotonic()
         #print("-*--> ENRIQUE HERE")
         #print(get_arrival_times())
-        arrivals = get_arrival_times()
-        update_text(*arrivals)
+            t1, t2, t3 = get_arrival_times()
+            print(t1, t2, t3)
+            # update_text(t1, t2, t3)
+            # update_text(*arrivals)
+        title.update()
     except (ValueError, RuntimeError) as e:
         print("Some error occured, retrying! -", e)
         error_counter = error_counter + 1
         if error_counter > ERROR_RESET_THRESHOLD:
             microcontroller.reset()
 
-    time.sleep(UPDATE_DELAY)
+    # time.sleep(UPDATE_DELAY)
