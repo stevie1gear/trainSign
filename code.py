@@ -19,7 +19,7 @@ import gc
 
 #CONFIGURABLE PARAMETERS
 #-*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*--*-/-*-\-*-
-BOARD_TITLE = 'Boston College'
+BOARD_TITLE = 'Green-B'
 STOP_ID = 'place-kencl'
 DIRECTION_ID = '0'
 ROUTE = 'Green-B'
@@ -42,6 +42,7 @@ def get_arrival_times():
     print("Data source: "+DATA_SOURCE)
     stop_trains =  network.fetch_data(DATA_SOURCE)
     res = json.loads(stop_trains)
+    del stop_trains
     # print(res)
     try:
         train1 = res["data"][0]["attributes"]["departure_time"]
@@ -59,11 +60,12 @@ def get_arrival_times():
     except:
         train3_min=-777
 
+    del res
     return train1_min,train2_min,train3_min
 
 def text_formating(trainMinutes):
     textFormated = ""
-    if(trainMinutes<=0 & trainMinutes > -100):
+    if(trainMinutes<=0 and trainMinutes > -100):
         textFormated = "Now"
     elif(trainMinutes<10):
         textFormated = "%s  min" % (trainMinutes)
@@ -82,29 +84,33 @@ def text_formating(trainMinutes):
 
 def text_formating2(trainMinutes):
     textFormated = ""
-    if(trainMinutes<=0 & trainMinutes > -100):
-        textFormated = "Now"
+    if(trainMinutes<=0 and trainMinutes > -100):
+        return "Now"
     elif(trainMinutes<10):
-        textFormated = str(trainMinutes) + "  min"
-    else: 
-        textFormated = str(trainMinutes) + " min"
+        return str(trainMinutes) + "  min"
+    elif(trainMinutes>=10): 
+        return str(trainMinutes) + " min"
 
     if(trainMinutes==-777):
-        textFormated = "-----"
+        return "-----"
     elif(trainMinutes==-888):
-        textFormated = "-----"
+        return "-----"
     elif(trainMinutes==-999):
-        textFormated = "-----"
+        return "-----"
 
     return textFormated
 
 def update_text(t1, t2, t3):
 
+    # text_lines[2].text = text_formating(t1)
+    # text_lines[3].text = text_formating(t2)
+    # text_lines[4].text = text_formating(t3)
+
     text_lines[2].text = text_formating2(t1)
     text_lines[3].text = text_formating2(t2)
     text_lines[4].text = text_formating2(t3)
     
-    # text_lines[2].text = str(t1)
+    # text_lines[2].text = "4  min"
     # text_lines[3].text = "10 min"
     # text_lines[4].text = "18 min"
     gc.collect()
@@ -125,7 +131,7 @@ colors = [0x444444, 0xDD8000]  # [dim white, gold]
 font = bitmap_font.load_font("fonts/6x10.bdf")
 
 title = adafruit_display_text.label.Label(font, color=colors[0], x=20, y=3, text=BOARD_TITLE)
-# title = adafruit_display_text.scrolling_label.ScrollingLabel(font, max_characters=7, color=colors[0], x=20, y=3, text=BOARD_TITLE)
+# title = adafruit_display_text.scrolling_label.ScrollingLabel(font, max_characters=7, animate_time=0.3, color=colors[0], x=20, y=3, text=BOARD_TITLE)
 
 text_lines = [
     displayio.TileGrid(bitmap, pixel_shader=getattr(bitmap, 'pixel_shader', displayio.ColorConverter())),
@@ -155,8 +161,10 @@ while True:
             print(t1, t2, t3)
             last_fetch = time.monotonic()
             update_text(t1, t2, t3)
+            gc.collect()
             # update_text(*arrivals)
         # title.update()
+        # gc.collect()
     except (ValueError, RuntimeError) as e:
         print("Some error occured, retrying! -", e)
         error_counter = error_counter + 1
